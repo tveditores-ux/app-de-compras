@@ -31,6 +31,7 @@
   .rate-chip .label { color: var(--text-dim); font-weight: 600; }
   .rate-chip .value { font-weight: 700; margin-left: auto; }
   .rate-spread { background: var(--surface); padding: 6px 10px; border-radius: 8px; font-size: 11px; color: var(--warn); text-align: center; margin-top: 6px; border: 1px solid var(--border); }
+  .rate-source { font-size: 10px; color: var(--text-dim); margin-top: 4px; text-align: center; }
   main { padding: 16px; }
   .view { display: none; animation: fadeIn 0.2s ease; }
   .view.active { display: block; }
@@ -61,8 +62,8 @@
   .photo-preview.show { display: block; }
   .photo-preview img { width: 100%; height: auto; max-height: 300px; object-fit: contain; display: block; background: #000; }
   .photo-preview .photo-actions { position: absolute; top: 8px; right: 8px; display: flex; gap: 6px; }
-  .photo-preview .photo-btn { background: rgba(0,0,0,0.7); color: white; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 16px; cursor: pointer; backdrop-filter: blur(8px); }
-  .photo-preview .ocr-overlay { position: absolute; inset: 0; background: rgba(10,14,26,0.85); display: none; align-items: center; justify-content: center; flex-direction: column; color: white; font-size: 13px; font-weight: 600; padding: 20px; text-align: center; }
+  .photo-preview .photo-btn { background: rgba(0,0,0,0.7); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 18px; cursor: pointer; backdrop-filter: blur(8px); }
+  .photo-preview .ocr-overlay { position: absolute; inset: 0; background: rgba(10,14,26,0.9); display: none; align-items: center; justify-content: center; flex-direction: column; color: white; font-size: 13px; font-weight: 600; padding: 20px; text-align: center; }
   .photo-preview .ocr-overlay.show { display: flex; }
   .spinner { width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 10px; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -70,8 +71,9 @@
   .ocr-candidates.show { display: block; }
   .ocr-candidates .title { font-size: 11px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
   .ocr-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .ocr-chip { padding: 6px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text); font-family: inherit; }
+  .ocr-chip { padding: 8px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; font-size: 14px; font-weight: 700; cursor: pointer; color: var(--text); font-family: inherit; }
   .ocr-chip:active { background: var(--accent-2); color: white; }
+  .ocr-chip.top { border-color: var(--accent); color: var(--accent); }
   .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); gap: 10px; }
   .cart-item:last-child { border-bottom: none; }
   .cart-item .thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: var(--surface-2); flex-shrink: 0; }
@@ -121,6 +123,7 @@
   .update-rates { background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 10px; border-radius: 8px; font-size: 11px; cursor: pointer; font-family: inherit; margin-left: auto; }
   .rate-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   canvas { max-width: 100%; height: auto; }
+  .ocr-tip { font-size: 11px; color: var(--text-dim); line-height: 1.5; margin-top: 8px; padding: 8px; background: rgba(96, 165, 250, 0.1); border-radius: 8px; border-left: 3px solid var(--accent-2); }
 </style>
 </head>
 <body>
@@ -135,6 +138,7 @@
       <div class="rate-chip"><span class="dot usdt"></span><span class="label">USDT</span><span class="value" id="rateUSDT">-</span></div>
     </div>
     <div class="rate-spread" id="rateSpread">Cargando tasas…</div>
+    <div class="rate-source" id="rateSource"></div>
   </header>
 
   <main>
@@ -153,7 +157,7 @@
           </div>
         </div>
         <div class="ocr-candidates" id="ocrCandidates">
-          <div class="title">💡 Precios detectados (tócalo para usar)</div>
+          <div class="title">💡 Toca el precio correcto</div>
           <div class="ocr-chips" id="ocrChips"></div>
         </div>
         <div class="input-group">
@@ -179,6 +183,9 @@
           <button class="btn btn-primary" onclick="addItem()">➕ Agregar</button>
         </div>
         <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleCameraCapture(event)">
+        <div class="ocr-tip">
+          💡 <strong>Tips para OCR:</strong> enfoca SOLO la etiqueta del precio, buena luz, sin reflejos. Evita capturar texto alrededor del precio.
+        </div>
       </div>
     </div>
 
@@ -214,14 +221,20 @@
 
     <div class="view" id="view-settings">
       <div class="card">
-        <h2>Tasas manuales</h2>
-        <div class="input-group"><label>BCV (Bs por USD)</label><input type="number" id="manualBCV" inputmode="decimal" step="0.01"></div>
-        <div class="input-group"><label>USDT P2P (Bs por USD)</label><input type="number" id="manualUSDT" inputmode="decimal" step="0.01"></div>
-        <button class="btn btn-primary" onclick="saveManualRates()">Guardar tasas</button>
+        <h2>Tasas en vivo</h2>
+        <p style="font-size: 13px; color: var(--text-dim); line-height: 1.6;">
+          BCV: Banco Central de Venezuela (scraping oficial)<br>
+          USDT: Binance P2P (mediana de anuncios activos)<br><br>
+          Las tasas se actualizan al abrir la app y cada 4h. Si las APIs fallan, la app muestra la última tasa guardada.
+        </p>
+        <button class="btn btn-primary" onclick="fetchRates(true)" style="margin-top: 12px;">🔄 Forzar actualización</button>
       </div>
       <div class="card">
         <h2>OCR</h2>
-        <p style="font-size: 13px; color: var(--text-dim); line-height: 1.6; margin-bottom: 12px;">Lectura automática de precios desde foto. Descarga ~2MB la primera vez.</p>
+        <p style="font-size: 13px; color: var(--text-dim); line-height: 1.6; margin-bottom: 12px;">
+          Estado: <span id="ocrState">No inicializado</span><br>
+          Motor: Tesseract.js (funciona offline después de primera carga)
+        </p>
         <button class="btn btn-secondary" id="btnPreloadOCR" onclick="preloadOCR()">🔍 Precargar OCR ahora</button>
       </div>
       <div class="card">
@@ -281,13 +294,14 @@
 <script>
 const state = {
   currency: 'VES', rateType: 'BCV',
-  rates: { bcv: 0, usdt: 0, updated: null, manual: false },
+  rates: { bcv: 0, usdt: 0, updated: null, bcvSource: null, usdtSource: null },
   cart: [], history: [],
   payMethod: 'efectivo_usd',
   currentPhoto: null, currentPhotoUrl: null,
-  ocrWorker: null, ocrLoading: false,
+  ocrWorker: null, ocrLoading: false, ocrReady: false,
 };
 
+// ============ INDEXEDDB ============
 const IDB = {
   db: null,
   async open() {
@@ -353,75 +367,169 @@ const storage = {
   }
 };
 
+// ============ TASAS ============
+// Intenta múltiples fuentes en cascada. Cada fuente tiene un "parser" específico.
+// Los proxies CORS se usan como fallback si la API directa falla por CORS.
+
+async function tryFetch(url, parser, useProxy = false) {
+  try {
+    const finalUrl = useProxy ? `https://corsproxy.io/?${encodeURIComponent(url)}` : url;
+    const res = await fetch(finalUrl, { cache: 'no-store', signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const value = parser(data);
+    return (value && value > 0 && value < 10000000) ? value : null;
+  } catch(e) {
+    console.warn('Fetch fail:', url, e.message);
+    return null;
+  }
+}
+
+async function fetchBCV() {
+  // Fuente 1: ve.dolarapi.com (scraping BCV oficial)
+  let v = await tryFetch('https://ve.dolarapi.com/v1/dolares/oficial', d => parseFloat(d.promedio));
+  if (v) return { value: v, source: 'dolarapi' };
+
+  // Fuente 2: pydolarve v2
+  v = await tryFetch('https://pydolarve.org/api/v2/tipo-cambio?currency=usd', d => parseFloat(d?.monitors?.bcv?.price || d?.price));
+  if (v) return { value: v, source: 'pydolarve' };
+
+  // Fuente 3: pydolarve v1
+  v = await tryFetch('https://pydolarve.org/api/v1/dollar?page=bcv', d => {
+    const m = d?.monitors?.usd || d?.monitors?.bcv;
+    return parseFloat(m?.price);
+  });
+  if (v) return { value: v, source: 'pydolarve-v1' };
+
+  // Con proxy CORS si lo anterior falla
+  v = await tryFetch('https://ve.dolarapi.com/v1/dolares/oficial', d => parseFloat(d.promedio), true);
+  if (v) return { value: v, source: 'dolarapi-proxy' };
+
+  return null;
+}
+
+async function fetchUSDT() {
+  // Fuente 1: consultar directamente Binance P2P
+  try {
+    const res = await fetch('https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(10000),
+      body: JSON.stringify({
+        asset: 'USDT', fiat: 'VES', tradeType: 'SELL',
+        page: 1, rows: 10, payTypes: [], publisherType: null
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const ads = data?.data || [];
+      if (ads.length > 0) {
+        const prices = ads.map(a => parseFloat(a.adv.price)).filter(p => p > 0).sort((a,b) => a - b);
+        if (prices.length > 0) {
+          const median = prices[Math.floor(prices.length / 2)];
+          return { value: median, source: 'binance-p2p' };
+        }
+      }
+    }
+  } catch(e) { console.warn('Binance P2P direct fail:', e.message); }
+
+  // Fuente 2: Binance P2P vía proxy CORS
+  try {
+    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent('https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search');
+    const res = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(10000),
+      body: JSON.stringify({
+        asset: 'USDT', fiat: 'VES', tradeType: 'SELL',
+        page: 1, rows: 10, payTypes: [], publisherType: null
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const ads = data?.data || [];
+      if (ads.length > 0) {
+        const prices = ads.map(a => parseFloat(a.adv.price)).filter(p => p > 0).sort((a,b) => a - b);
+        if (prices.length > 0) {
+          const median = prices[Math.floor(prices.length / 2)];
+          return { value: median, source: 'binance-p2p-proxy' };
+        }
+      }
+    }
+  } catch(e) { console.warn('Binance P2P proxy fail:', e.message); }
+
+  // Fuente 3: monitor Binance de ve.dolarapi
+  let v = await tryFetch('https://ve.dolarapi.com/v1/dolares', d => {
+    const binance = d.find(x => x.fuente === 'binance' || x.nombre?.toLowerCase().includes('binance'));
+    return parseFloat(binance?.promedio);
+  });
+  if (v) return { value: v, source: 'dolarapi-binance' };
+
+  // Fuente 4: pydolarve monitor Binance
+  v = await tryFetch('https://pydolarve.org/api/v1/dollar?page=criptodolar', d => {
+    const m = d?.monitors?.binance_p2p || d?.monitors?.binance;
+    return parseFloat(m?.price);
+  });
+  if (v) return { value: v, source: 'pydolarve-binance' };
+
+  // Fuente 5: paralelo (no es binance pero es aproximación)
+  v = await tryFetch('https://ve.dolarapi.com/v1/dolares/paralelo', d => parseFloat(d.promedio));
+  if (v) return { value: v, source: 'paralelo-fallback' };
+
+  return null;
+}
+
 async function fetchRates(force = false) {
-  if (!force && state.rates.manual) { toast('Usando tasas manuales'); return; }
   const now = Date.now();
   const age = state.rates.updated ? now - state.rates.updated : Infinity;
   if (!force && age < 4 * 60 * 60 * 1000 && state.rates.bcv > 0) return;
 
-  toast('Actualizando tasas…');
-  let bcv = null, usdt = null;
+  toast('🔄 Actualizando tasas…');
 
-  try {
-    const res = await fetch('https://pydolarve.org/api/v1/dollar?page=bcv', { cache: 'no-store' });
-    const data = await res.json();
-    if (data.monitors?.usd?.price) bcv = parseFloat(data.monitors.usd.price);
-  } catch(e) {}
+  const [bcvResult, usdtResult] = await Promise.all([fetchBCV(), fetchUSDT()]);
 
-  try {
-    const res = await fetch('https://pydolarve.org/api/v1/dollar?page=enparalelovzla', { cache: 'no-store' });
-    const data = await res.json();
-    if (data.monitors?.enparalelovzla?.price) usdt = parseFloat(data.monitors.enparalelovzla.price);
-  } catch(e) {}
-
-  if (!bcv) {
-    try {
-      const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
-      const data = await res.json();
-      if (data.promedio) bcv = parseFloat(data.promedio);
-    } catch(e) {}
-  }
-  if (!usdt) {
-    try {
-      const res = await fetch('https://ve.dolarapi.com/v1/dolares/paralelo');
-      const data = await res.json();
-      if (data.promedio) usdt = parseFloat(data.promedio);
-    } catch(e) {}
-  }
-
-  if (bcv && usdt) {
-    state.rates = { bcv, usdt, updated: now, manual: false };
-    storage.save(); renderRates();
-    toast('Tasas actualizadas ✓');
+  if (bcvResult && usdtResult) {
+    state.rates = {
+      bcv: bcvResult.value,
+      usdt: usdtResult.value,
+      updated: now,
+      bcvSource: bcvResult.source,
+      usdtSource: usdtResult.source,
+    };
+    storage.save();
+    renderRates();
+    toast('✓ Tasas actualizadas');
+  } else if (bcvResult || usdtResult) {
+    // Al menos una funcionó: actualiza solo esa
+    if (bcvResult) { state.rates.bcv = bcvResult.value; state.rates.bcvSource = bcvResult.source; }
+    if (usdtResult) { state.rates.usdt = usdtResult.value; state.rates.usdtSource = usdtResult.source; }
+    state.rates.updated = now;
+    storage.save();
+    renderRates();
+    toast(`⚠️ Actualizada parcialmente (${bcvResult ? 'BCV' : 'USDT'} falló)`);
   } else {
-    toast('⚠️ No se pudieron obtener. Usa tasas manuales en Ajustes.');
+    toast('❌ No hay conexión con APIs. Conectado a internet?');
   }
 }
 
 function renderRates() {
-  const { bcv, usdt } = state.rates;
+  const { bcv, usdt, bcvSource, usdtSource } = state.rates;
   document.getElementById('rateBCV').textContent = bcv ? bcv.toFixed(2) : '-';
   document.getElementById('rateUSDT').textContent = usdt ? usdt.toFixed(2) : '-';
   document.getElementById('rateSelBCV').textContent = bcv ? bcv.toFixed(2) : '-';
   document.getElementById('rateSelUSDT').textContent = usdt ? usdt.toFixed(2) : '-';
+
   if (bcv && usdt) {
     const spread = ((usdt - bcv) / bcv) * 100;
     const age = state.rates.updated ? Math.round((Date.now() - state.rates.updated) / 60000) : 0;
-    const ageText = state.rates.manual ? 'manual' : (age < 60 ? `${age}m` : `${Math.round(age/60)}h`);
-    document.getElementById('rateSpread').innerHTML = `Spread: <strong>+${spread.toFixed(1)}%</strong> · Actualizado hace ${ageText}`;
+    const ageText = age < 60 ? `${age}m` : `${Math.round(age/60)}h`;
+    document.getElementById('rateSpread').innerHTML = `Spread: <strong>+${spread.toFixed(1)}%</strong> · Hace ${ageText}`;
+    document.getElementById('rateSource').textContent = `BCV: ${bcvSource || '?'} · USDT: ${usdtSource || '?'}`;
   }
   updateConversionPreview();
 }
 
-function saveManualRates() {
-  const bcv = parseFloat(document.getElementById('manualBCV').value);
-  const usdt = parseFloat(document.getElementById('manualUSDT').value);
-  if (!bcv || !usdt) { toast('Ingresa ambas tasas'); return; }
-  state.rates = { bcv, usdt, updated: Date.now(), manual: true };
-  storage.save(); renderRates();
-  toast('Tasas manuales guardadas ✓');
-}
-
+// ============ CAMARA + OCR ============
 function captureFromCamera() { document.getElementById('cameraInput').click(); }
 
 async function handleCameraCapture(event) {
@@ -429,22 +537,23 @@ async function handleCameraCapture(event) {
   if (!file) return;
   event.target.value = '';
   try {
-    const compressed = await compressImage(file, 1200, 0.85);
+    const compressed = await compressImage(file, 1600, 0.9);
     state.currentPhoto = compressed;
     if (state.currentPhotoUrl) URL.revokeObjectURL(state.currentPhotoUrl);
     state.currentPhotoUrl = URL.createObjectURL(compressed);
     document.getElementById('photoImg').src = state.currentPhotoUrl;
     document.getElementById('photoPreview').classList.add('show');
     document.getElementById('ocrCandidates').classList.remove('show');
-    toast('Foto cargada. Toca 🔍 para leer el precio');
-    if (state.ocrWorker) setTimeout(() => runOCR(), 300);
+    toast('Foto cargada. Ejecutando OCR…');
+    // Auto-OCR
+    setTimeout(() => runOCR(), 400);
   } catch(e) {
     toast('Error al cargar foto: ' + e.message);
     console.error(e);
   }
 }
 
-async function compressImage(file, maxDim = 1200, quality = 0.85) {
+async function compressImage(file, maxDim = 1600, quality = 0.9) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -474,36 +583,88 @@ function removePhoto() {
   document.getElementById('ocrCandidates').classList.remove('show');
 }
 
-async function loadTesseract() {
-  if (window.Tesseract) return;
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js';
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('No se pudo cargar Tesseract (¿sin internet?)'));
-    document.head.appendChild(script);
+// CDNs para Tesseract (en orden de preferencia)
+const TESSERACT_CDNS = [
+  'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js',
+  'https://unpkg.com/tesseract.js@5.1.1/dist/tesseract.min.js',
+  'https://cdn.jsdelivr.net/npm/tesseract.js@4.1.4/dist/tesseract.min.js',
+];
+
+async function loadTesseractScript() {
+  if (window.Tesseract) return true;
+
+  for (const cdnUrl of TESSERACT_CDNS) {
+    try {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = cdnUrl;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('CDN fail: ' + cdnUrl));
+        setTimeout(() => reject(new Error('Timeout CDN')), 15000);
+        document.head.appendChild(script);
+      });
+      if (window.Tesseract) {
+        console.log('Tesseract cargado desde:', cdnUrl);
+        return true;
+      }
+    } catch(e) {
+      console.warn('Falló CDN:', cdnUrl, e.message);
+    }
+  }
+  return false;
+}
+
+function updateOCRState(txt) {
+  const el = document.getElementById('ocrState');
+  if (el) el.textContent = txt;
+}
+
+async function initOCRWorker(progressCb) {
+  const loaded = await loadTesseractScript();
+  if (!loaded) throw new Error('No se pudo cargar Tesseract desde ningún CDN. Revisa tu internet.');
+
+  const worker = await Tesseract.createWorker('eng', 1, {
+    logger: progressCb ? (m => progressCb(m)) : undefined,
+    // Forzar rutas del CDN para worker y language data
+    workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js',
+    langPath: 'https://tessdata.projectnaptha.com/4.0.0',
+    corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.0',
   });
+
+  // Configurar para reconocer solo números, letras básicas y símbolos de moneda
+  await worker.setParameters({
+    tessedit_char_whitelist: '0123456789.,BsSUSD$ ',
+    preserve_interword_spaces: '1',
+  });
+
+  return worker;
 }
 
 async function preloadOCR() {
   if (state.ocrWorker) { toast('OCR ya está listo'); return; }
-  if (state.ocrLoading) { toast('Cargando…'); return; }
+  if (state.ocrLoading) { toast('Cargando ya en curso…'); return; }
   state.ocrLoading = true;
   const btn = document.getElementById('btnPreloadOCR');
   if (btn) { btn.disabled = true; btn.textContent = 'Descargando…'; }
+  updateOCRState('Descargando…');
+
   try {
-    await loadTesseract();
-    state.ocrWorker = await Tesseract.createWorker('spa', 1, {
-      logger: m => {
-        if (btn && m.status) btn.textContent = `${m.status}… ${Math.round((m.progress||0)*100)}%`;
-      }
+    state.ocrWorker = await initOCRWorker(m => {
+      if (btn && m.status) btn.textContent = `${m.status}… ${Math.round((m.progress||0)*100)}%`;
+      updateOCRState(`${m.status} ${Math.round((m.progress||0)*100)}%`);
     });
-    toast('OCR listo ✓');
+    state.ocrReady = true;
+    toast('✓ OCR listo');
     if (btn) { btn.textContent = '✓ OCR cargado'; btn.disabled = true; }
+    updateOCRState('✓ Listo');
   } catch(e) {
-    toast('Error: ' + e.message);
+    toast('❌ Error: ' + e.message);
+    console.error(e);
     if (btn) { btn.disabled = false; btn.textContent = '🔍 Precargar OCR ahora'; }
-  } finally { state.ocrLoading = false; }
+    updateOCRState('Error: ' + e.message);
+  } finally {
+    state.ocrLoading = false;
+  }
 }
 
 async function runOCR() {
@@ -511,52 +672,104 @@ async function runOCR() {
   const overlay = document.getElementById('ocrOverlay');
   const status = document.getElementById('ocrStatus');
   overlay.classList.add('show');
+
   try {
     if (!state.ocrWorker) {
       status.textContent = 'Descargando OCR (primera vez, ~2MB)…';
-      await loadTesseract();
-      state.ocrWorker = await Tesseract.createWorker('spa', 1, {
-        logger: m => {
-          if (m.status && m.progress !== undefined) {
-            status.textContent = `${m.status} ${Math.round(m.progress*100)}%`;
-          }
+      state.ocrWorker = await initOCRWorker(m => {
+        if (m.status && m.progress !== undefined) {
+          status.textContent = `${m.status} ${Math.round(m.progress*100)}%`;
         }
       });
+      state.ocrReady = true;
+      updateOCRState('✓ Listo');
     }
-    status.textContent = 'Leyendo texto…';
-    const { data } = await state.ocrWorker.recognize(state.currentPhoto);
+
+    status.textContent = 'Procesando imagen…';
+    // Pre-procesar imagen para mejorar OCR
+    const processed = await preprocessForOCR(state.currentPhoto);
+
+    status.textContent = 'Leyendo precio…';
+    const { data } = await state.ocrWorker.recognize(processed);
     const text = data.text || '';
-    console.log('OCR texto:', text);
+    console.log('OCR texto crudo:', text);
+    console.log('OCR confianza:', data.confidence);
+
     const candidates = extractPriceCandidates(text);
     overlay.classList.remove('show');
-    if (candidates.length === 0) { toast('No se detectaron precios. Escribe manualmente.'); return; }
+
+    if (candidates.length === 0) {
+      toast('No se detectaron precios. Escribe manualmente.');
+      return;
+    }
+
     const container = document.getElementById('ocrCandidates');
     const chips = document.getElementById('ocrChips');
-    chips.innerHTML = candidates.map(c =>
-      `<button class="ocr-chip" onclick="usePriceCandidate('${c.value}', '${c.currency}')">${c.currency === 'USD' ? '$' : 'Bs '}${c.display}</button>`
+    chips.innerHTML = candidates.map((c, i) =>
+      `<button class="ocr-chip ${i === 0 ? 'top' : ''}" onclick="usePriceCandidate('${c.value}', '${c.currency}')">${c.currency === 'USD' ? '$' : 'Bs '}${c.display}</button>`
     ).join('');
     container.classList.add('show');
+
     const top = candidates[0];
     usePriceCandidate(top.value, top.currency);
-    toast(`Detectado: ${top.currency === 'USD' ? '$' : 'Bs '}${top.display}`);
+    toast(`✓ Detectado: ${top.currency === 'USD' ? '$' : 'Bs '}${top.display}`);
   } catch(e) {
     overlay.classList.remove('show');
-    toast('Error OCR: ' + e.message);
+    toast('❌ Error OCR: ' + e.message);
     console.error(e);
   }
 }
 
+// Pre-procesamiento: aumenta contraste y escala para mejorar OCR
+async function preprocessForOCR(blob) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(blob);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      try {
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const d = imgData.data;
+        // Convertir a escala de grises + aumentar contraste
+        for (let i = 0; i < d.length; i += 4) {
+          const gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+          // Threshold suave
+          const adj = gray > 128 ? Math.min(255, gray * 1.2) : Math.max(0, gray * 0.8);
+          d[i] = d[i+1] = d[i+2] = adj;
+        }
+        ctx.putImageData(imgData, 0, 0);
+      } catch(e) {
+        console.warn('Preprocess falló (sin canvas access), uso original');
+      }
+
+      canvas.toBlob(b => resolve(b || blob), 'image/jpeg', 0.95);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(blob); };
+    img.src = url;
+  });
+}
+
 function extractPriceCandidates(text) {
-  const clean = text.replace(/\s+/g, ' ');
+  const clean = text.replace(/[^\w\s.,$BsUSD]/gi, ' ').replace(/\s+/g, ' ').trim();
+  console.log('OCR texto limpio:', clean);
+
   const candidates = [];
   const patterns = [
-    { re: /(?:US\$|USD|\$)\s*([\d.,]+)/gi, currency: 'USD', priority: 3 },
-    { re: /([\d.,]+)\s*(?:US\$|USD|\$)/gi, currency: 'USD', priority: 3 },
-    { re: /(?:Bs\.?S?\.?|bolivares?|bolívares?)\s*([\d.,]+)/gi, currency: 'VES', priority: 3 },
-    { re: /([\d.,]+)\s*(?:Bs\.?S?\.?|bolivares?|bolívares?)/gi, currency: 'VES', priority: 3 },
-    { re: /(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})\b/g, currency: null, priority: 2 },
-    { re: /\b(\d+[.,]\d{2})\b/g, currency: null, priority: 1 },
+    { re: /(?:US\$|USD|\$)\s*([\d.,]+)/gi, currency: 'USD', priority: 5 },
+    { re: /([\d.,]+)\s*(?:US\$|USD|\$)/gi, currency: 'USD', priority: 5 },
+    { re: /(?:Bs\.?S?\.?|BsS?)\s*([\d.,]+)/gi, currency: 'VES', priority: 5 },
+    { re: /([\d.,]+)\s*(?:Bs\.?S?\.?|BsS?)/gi, currency: 'VES', priority: 5 },
+    { re: /(\d{1,3}(?:[.,]\d{3})+[.,]\d{2})\b/g, currency: null, priority: 3 }, // 1.234,56
+    { re: /(\d+[.,]\d{2})\b/g, currency: null, priority: 2 }, // 12,50 o 12.50
+    { re: /\b(\d{2,})\b/g, currency: null, priority: 1 }, // solo enteros 10+
   ];
+
   const seen = new Set();
   patterns.forEach(({ re, currency, priority }) => {
     let m; re.lastIndex = 0;
@@ -569,21 +782,31 @@ function extractPriceCandidates(text) {
       seen.add(key);
       let cur = currency;
       if (!cur) cur = value > 100 ? 'VES' : 'USD';
-      candidates.push({ value: value.toFixed(2), display: formatPrice(value), currency: cur, priority, rawValue: value });
+      candidates.push({
+        value: value.toFixed(2),
+        display: formatPrice(value),
+        currency: cur,
+        priority,
+        rawValue: value,
+      });
     }
   });
+
+  // Ordenar por prioridad y luego por "razonabilidad" del valor
   candidates.sort((a, b) => {
     if (a.priority !== b.priority) return b.priority - a.priority;
-    const aR = a.rawValue >= 1 && a.rawValue <= 100000 ? 1 : 0;
-    const bR = b.rawValue >= 1 && b.rawValue <= 100000 ? 1 : 0;
+    const aR = a.rawValue >= 0.5 && a.rawValue <= 100000 ? 1 : 0;
+    const bR = b.rawValue >= 0.5 && b.rawValue <= 100000 ? 1 : 0;
     return bR - aR;
   });
-  return candidates.slice(0, 8);
+
+  return candidates.slice(0, 6);
 }
 
 function parseVenezuelanNumber(s) {
   if (!s) return null;
-  s = s.trim();
+  s = s.trim().replace(/[^\d.,]/g, '');
+  if (!s) return null;
   const hasComma = s.includes(','), hasDot = s.includes('.');
   if (hasComma && hasDot) {
     const lastComma = s.lastIndexOf(',');
@@ -609,6 +832,7 @@ function usePriceCandidate(value, currency) {
   updateConversionPreview();
 }
 
+// ============ CAPTURA ============
 function setCurrency(cur) {
   state.currency = cur;
   document.getElementById('curUSD').classList.toggle('active', cur === 'USD');
@@ -892,11 +1116,7 @@ async function showView(name, btn) {
   if (btn) btn.classList.add('active');
   if (name === 'cart') await renderCart();
   if (name === 'history') await renderHistory();
-  if (name === 'settings') {
-    document.getElementById('manualBCV').value = state.rates.bcv || '';
-    document.getElementById('manualUSDT').value = state.rates.usdt || '';
-    updateStorageInfo();
-  }
+  if (name === 'settings') updateStorageInfo();
 }
 
 async function updateStorageInfo() {
@@ -934,7 +1154,7 @@ async function resetData() {
   localStorage.removeItem('pricecheck');
   try { await IDB.clear(); } catch(e){}
   state.history = []; state.cart = [];
-  state.rates = { bcv: 0, usdt: 0, updated: null, manual: false };
+  state.rates = { bcv: 0, usdt: 0, updated: null, bcvSource: null, usdtSource: null };
   renderCart(); renderHistory(); renderRates();
   toast('Todo borrado');
 }
@@ -944,7 +1164,7 @@ function toast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(window._toastT);
-  window._toastT = setTimeout(() => t.classList.remove('show'), 2800);
+  window._toastT = setTimeout(() => t.classList.remove('show'), 3000);
 }
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
