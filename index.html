@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0e1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>PriceCheck VE</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>">
+<link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"PriceCheck VE","short_name":"PriceCheck","start_url":".","display":"standalone","background_color":"%230a0e1a","theme_color":"%230a0e1a","icons":[{"src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48dGV4dCB5PSIuOWVtIiBmb250LXNpemU9IjkwIj7wn5KwPC90ZXh0Pjwvc3ZnPg==","sizes":"192x192","type":"image/svg+xml"}]}'>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg: #0a0e1a;
+    --surface: #141a2a;
+    --surface-2: #1c2438;
+    --border: #2a3250;
+    --text: #e8ecf5;
+    --text-dim: #8892b0;
+    --accent: #4ade80;
+    --accent-2: #60a5fa;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --usdt: #f0b90b;
+    --bcv: #3b82f6;
+  }
+  html, body { height: 100%; overscroll-behavior: none; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: 70px;
+  }
+  .app { max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative; }
+  header {
+    padding: 16px;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  header h1 span { font-size: 22px; }
+  .rate-badge {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .rate-chip {
+    flex: 1;
+    min-width: 0;
+    background: var(--surface);
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+  }
+  .rate-chip .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .rate-chip .dot.bcv { background: var(--bcv); }
+  .rate-chip .dot.usdt { background: var(--usdt); }
+  .rate-chip .label { color: var(--text-dim); font-weight: 600; }
+  .rate-chip .value { font-weight: 700; margin-left: auto; }
+  .rate-spread {
+    background: var(--surface);
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    color: var(--warn);
+    text-align: center;
+    margin-top: 6px;
+    border: 1px solid var(--border);
+  }
+  main { padding: 16px; }
+  .view { display: none; animation: fadeIn 0.2s ease; }
+  .view.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .card h2 { font-size: 14px; color: var(--text-dim); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 0.1s;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--accent); color: #0a1a0a; }
+  .btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  input, select {
+    width: 100%;
+    padding: 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 15px;
+    font-family: inherit;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--accent-2); }
+
+  .input-group { margin-bottom: 12px; }
+  .input-group label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .currency-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    background: var(--surface-2);
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  .currency-toggle button {
+    padding: 10px;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  .currency-toggle button.active { background: var(--accent-2); color: white; }
+
+  .rate-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    background: var(--surface-2);
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .rate-selector button {
+    padding: 10px 6px;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    text-align: left;
+  }
+  .rate-selector button.active.bcv { background: var(--bcv); color: white; }
+  .rate-selector button.active.usdt { background: var(--usdt); color: #1a1a0a; }
+  .rate-selector button strong { display: block; font-size: 14px; }
+
+  .cart-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .cart-item:last-child { border-bottom: none; }
+  .cart-item .info { flex: 1; min-width: 0; }
+  .cart-item .name { font-weight: 600; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cart-item .meta { font-size: 11px; color: var(--text-dim); }
+  .cart-item .prices { text-align: right; }
+  .cart-item .usd { font-weight: 700; color: var(--accent); }
+  .cart-item .ves { font-size: 11px; color: var(--text-dim); }
+  .cart-item .del {
+    background: transparent;
+    border: none;
+    color: var(--danger);
+    font-size: 20px;
+    padding: 0 0 0 10px;
+    cursor: pointer;
+  }
+
+  .total-box {
+    background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
+    border: 1px solid var(--accent);
+    padding: 20px;
+    border-radius: 14px;
+    margin: 16px 0;
+  }
+  .total-box .total-label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+  .total-box .total-usd { font-size: 32px; font-weight: 800; color: var(--accent); margin: 4px 0; }
+  .total-box .total-ves { font-size: 14px; color: var(--text-dim); }
+
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-dim);
+  }
+  .empty .icon { font-size: 48px; margin-bottom: 12px; }
+
+  nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    z-index: 100;
+  }
+  nav button {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    padding: 10px 4px;
+    font-family: inherit;
+    font-size: 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  nav button.active { color: var(--accent); }
+  nav button .ico { font-size: 20px; }
+
+  .history-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .history-item .top { display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px; }
+  .history-item .date { font-size: 12px; color: var(--text-dim); }
+  .history-item .total { font-size: 20px; font-weight: 800; color: var(--accent); }
+  .history-item .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    background: var(--surface-2);
+    color: var(--text-dim);
+    margin-right: 4px;
+    text-transform: uppercase;
+  }
+
+  .chart-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 12px;
+    border-radius: 10px;
+  }
+  .stat .val { font-size: 20px; font-weight: 800; color: var(--text); }
+  .stat .lbl { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    align-items: flex-end;
+    z-index: 1000;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--surface);
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    border-radius: 20px 20px 0 0;
+    padding: 20px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal h2 { margin-bottom: 16px; }
+
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface-2);
+    border: 1px solid var(--accent);
+    padding: 12px 20px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+
+  .install-banner {
+    background: linear-gradient(135deg, var(--accent-2), #8b5cf6);
+    color: white;
+    padding: 12px 16px;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 13px;
+  }
+  .install-banner.show { display: flex; }
+  .install-banner button {
+    background: white;
+    color: #1a1a2a;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .install-banner .close {
+    background: transparent;
+    color: white;
+    font-size: 20px;
+    padding: 0 4px;
+  }
+
+  .pay-method-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .pay-method {
+    padding: 14px 10px;
+    background: var(--surface-2);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: center;
+    font-family: inherit;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .pay-method.active { border-color: var(--accent); background: rgba(74, 222, 128, 0.1); }
+  .pay-method .ico { font-size: 24px; display: block; margin-bottom: 4px; }
+
+  .update-rates {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+    margin-left: auto;
+  }
+
+  .rate-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  canvas { max-width: 100%; height: auto; }
+</style>
+</head>
+<body>
+
+<div class="install-banner" id="installBanner">
+  <span>📱 Instalar PriceCheck en tu celular</span>
+  <button onclick="installApp()">Instalar</button>
+  <button class="close" onclick="hideInstall()">×</button>
+</div>
+
+<div class="app">
+  <header>
+    <div class="rate-header">
+      <h1><span>💰</span> PriceCheck VE</h1>
+      <button class="update-rates" onclick="fetchRates(true)">🔄 Actualizar</button>
+    </div>
+    <div class="rate-badge">
+      <div class="rate-chip">
+        <span class="dot bcv"></span>
+        <span class="label">BCV</span>
+        <span class="value" id="rateBCV">-</span>
+      </div>
+      <div class="rate-chip">
+        <span class="dot usdt"></span>
+        <span class="label">USDT</span>
+        <span class="value" id="rateUSDT">-</span>
+      </div>
+    </div>
+    <div class="rate-spread" id="rateSpread">Cargando tasas…</div>
+  </header>
+
+  <main>
+    <!-- VISTA: CAPTURAR -->
+    <div class="view active" id="view-scan">
+      <div class="card">
+        <h2>Nuevo item</h2>
+
+        <div class="input-group">
+          <label>Moneda del precio</label>
+          <div class="currency-toggle">
+            <button id="curUSD" onclick="setCurrency('USD')">USD $</button>
+            <button id="curVES" class="active" onclick="setCurrency('VES')">Bolívares Bs</button>
+          </div>
+        </div>
+
+        <div class="input-group" id="rateSelectorGroup">
+          <label>Tasa para conversión</label>
+          <div class="rate-selector">
+            <button id="rateBtnBCV" class="active bcv" onclick="setRateType('BCV')">
+              BCV <strong id="rateSelBCV">-</strong>
+            </button>
+            <button id="rateBtnUSDT" class="usdt" onclick="setRateType('USDT')">
+              USDT <strong id="rateSelUSDT">-</strong>
+            </button>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>Producto</label>
+          <input type="text" id="itemName" placeholder="Ej: Harina PAN 1kg" autocomplete="off">
+        </div>
+
+        <div class="input-group">
+          <label>Precio <span id="priceCurrencyLabel">(Bs)</span></label>
+          <input type="number" id="itemPrice" placeholder="0.00" inputmode="decimal" step="0.01">
+        </div>
+
+        <div class="input-group">
+          <label>Cantidad</label>
+          <input type="number" id="itemQty" value="1" inputmode="numeric" min="1">
+        </div>
+
+        <div id="conversionPreview" style="margin-bottom: 12px; padding: 12px; background: var(--surface-2); border-radius: 10px; font-size: 13px; color: var(--text-dim); display: none;">
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="captureFromCamera()">📷 Foto OCR</button>
+          <button class="btn btn-primary" onclick="addItem()">➕ Agregar</button>
+        </div>
+        <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleCameraCapture(event)">
+      </div>
+    </div>
+
+    <!-- VISTA: CARRITO -->
+    <div class="view" id="view-cart">
+      <div class="card">
+        <h2>Carrito actual</h2>
+        <div id="cartList"></div>
+        <div id="cartEmpty" class="empty">
+          <div class="icon">🛒</div>
+          <div>Sin items aún</div>
+        </div>
+      </div>
+
+      <div class="total-box" id="totalBox" style="display:none">
+        <div class="total-label">Total en dólares</div>
+        <div class="total-usd" id="totalUSD">$0.00</div>
+        <div class="total-ves" id="totalVES">Bs 0,00 referencial</div>
+      </div>
+
+      <button class="btn btn-primary" id="btnFinalize" style="display:none" onclick="openPaymentModal()">💳 Finalizar y pagar</button>
+      <button class="btn btn-ghost" id="btnClear" style="display:none; margin-top: 8px;" onclick="clearCart()">Vaciar carrito</button>
+    </div>
+
+    <!-- VISTA: HISTORIAL -->
+    <div class="view" id="view-history">
+      <div class="stat-grid">
+        <div class="stat">
+          <div class="val" id="statTotal">$0</div>
+          <div class="lbl">Gastado total</div>
+        </div>
+        <div class="stat">
+          <div class="val" id="statCount">0</div>
+          <div class="lbl">Compras</div>
+        </div>
+        <div class="stat">
+          <div class="val" id="statMonth">$0</div>
+          <div class="lbl">Este mes</div>
+        </div>
+        <div class="stat">
+          <div class="val" id="statAvg">$0</div>
+          <div class="lbl">Promedio</div>
+        </div>
+      </div>
+
+      <div class="chart-container">
+        <h2 style="font-size: 14px; color: var(--text-dim); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Últimos 30 días (USD)</h2>
+        <canvas id="chart" width="400" height="200"></canvas>
+      </div>
+
+      <div id="historyList"></div>
+      <div id="historyEmpty" class="empty">
+        <div class="icon">📊</div>
+        <div>Sin compras registradas</div>
+      </div>
+    </div>
+
+    <!-- VISTA: AJUSTES -->
+    <div class="view" id="view-settings">
+      <div class="card">
+        <h2>Tasas manuales</h2>
+        <div class="input-group">
+          <label>BCV (Bs por USD)</label>
+          <input type="number" id="manualBCV" inputmode="decimal" step="0.01">
+        </div>
+        <div class="input-group">
+          <label>USDT P2P (Bs por USD)</label>
+          <input type="number" id="manualUSDT" inputmode="decimal" step="0.01">
+        </div>
+        <button class="btn btn-primary" onclick="saveManualRates()">Guardar tasas</button>
+      </div>
+
+      <div class="card">
+        <h2>Datos</h2>
+        <button class="btn btn-secondary" onclick="exportData()" style="margin-bottom: 8px;">📤 Exportar historial (JSON)</button>
+        <button class="btn btn-secondary" onclick="exportCSV()" style="margin-bottom: 8px;">📊 Exportar CSV</button>
+        <button class="btn btn-danger" onclick="resetData()">🗑️ Borrar todo</button>
+      </div>
+
+      <div class="card">
+        <h2>Acerca de</h2>
+        <p style="font-size: 13px; color: var(--text-dim); line-height: 1.6;">
+          PriceCheck VE guarda todo en tu dispositivo. Las tasas se consultan de APIs públicas venezolanas. Instala la app desde el banner o agrégala a pantalla de inicio desde el menú del navegador.
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <nav>
+    <button class="active" onclick="showView('scan', this)">
+      <span class="ico">📝</span>
+      <span>Capturar</span>
+    </button>
+    <button onclick="showView('cart', this)">
+      <span class="ico">🛒</span>
+      <span>Carrito <span id="cartCount"></span></span>
+    </button>
+    <button onclick="showView('history', this)">
+      <span class="ico">📊</span>
+      <span>Historial</span>
+    </button>
+    <button onclick="showView('settings', this)">
+      <span class="ico">⚙️</span>
+      <span>Ajustes</span>
+    </button>
+  </nav>
+</div>
+
+<!-- MODAL PAGO -->
+<div class="modal-overlay" id="paymentModal">
+  <div class="modal">
+    <h2>Finalizar compra</h2>
+    <div class="total-box">
+      <div class="total-label">A pagar</div>
+      <div class="total-usd" id="payTotalUSD">$0.00</div>
+      <div class="total-ves" id="payTotalVES">Bs 0,00</div>
+    </div>
+
+    <div class="input-group">
+      <label>Método de pago</label>
+      <div class="pay-method-grid">
+        <button class="pay-method active" data-method="efectivo_usd" onclick="setPayMethod(this)">
+          <span class="ico">💵</span>Efectivo USD
+        </button>
+        <button class="pay-method" data-method="pago_movil" onclick="setPayMethod(this)">
+          <span class="ico">📱</span>Pago Móvil
+        </button>
+        <button class="pay-method" data-method="debito_bs" onclick="setPayMethod(this)">
+          <span class="ico">💳</span>Débito Bs
+        </button>
+        <button class="pay-method" data-method="zelle" onclick="setPayMethod(this)">
+          <span class="ico">⚡</span>Zelle
+        </button>
+        <button class="pay-method" data-method="binance" onclick="setPayMethod(this)">
+          <span class="ico">🪙</span>Binance
+        </button>
+        <button class="pay-method" data-method="efectivo_bs" onclick="setPayMethod(this)">
+          <span class="ico">💴</span>Efectivo Bs
+        </button>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>Comercio (opcional)</label>
+      <input type="text" id="payStore" placeholder="Ej: Automercado de la esquina">
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closePaymentModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmPurchase()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== ESTADO ====================
+const state = {
+  currency: 'VES',          // moneda de entrada del precio
+  rateType: 'BCV',          // tasa usada para conversión
+  rates: { bcv: 0, usdt: 0, updated: null, manual: false },
+  cart: [],
+  history: [],
+  payMethod: 'efectivo_usd',
+  deferredPrompt: null,
+};
+
+// ==================== PERSISTENCIA ====================
+const storage = {
+  load() {
+    try {
+      const data = JSON.parse(localStorage.getItem('pricecheck') || '{}');
+      if (data.history) state.history = data.history;
+      if (data.rates) state.rates = data.rates;
+      if (data.cart) state.cart = data.cart;
+    } catch(e) { console.warn('Load error', e); }
+  },
+  save() {
+    localStorage.setItem('pricecheck', JSON.stringify({
+      history: state.history,
+      rates: state.rates,
+      cart: state.cart,
+    }));
+  }
+};
+
+// ==================== TASAS ====================
+async function fetchRates(force = false) {
+  if (!force && state.rates.manual) {
+    toast('Usando tasas manuales. Desactiva en Ajustes.');
+    return;
+  }
+
+  const now = Date.now();
+  const age = state.rates.updated ? now - state.rates.updated : Infinity;
+  if (!force && age < 4 * 60 * 60 * 1000 && state.rates.bcv > 0) {
+    return;
+  }
+
+  toast('Actualizando tasas…');
+
+  // Intento 1: pydolarve
+  let bcv = null, usdt = null;
+
+  try {
+    const res = await fetch('https://pydolarve.org/api/v1/dollar?page=bcv', { cache: 'no-store' });
+    const data = await res.json();
+    if (data.monitors?.usd?.price) bcv = parseFloat(data.monitors.usd.price);
+  } catch(e) {}
+
+  try {
+    const res = await fetch('https://pydolarve.org/api/v1/dollar?page=enparalelovzla', { cache: 'no-store' });
+    const data = await res.json();
+    if (data.monitors?.enparalelovzla?.price) usdt = parseFloat(data.monitors.enparalelovzla.price);
+  } catch(e) {}
+
+  // Fallback: ve.dolarapi.com
+  if (!bcv) {
+    try {
+      const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+      const data = await res.json();
+      if (data.promedio) bcv = parseFloat(data.promedio);
+    } catch(e) {}
+  }
+  if (!usdt) {
+    try {
+      const res = await fetch('https://ve.dolarapi.com/v1/dolares/paralelo');
+      const data = await res.json();
+      if (data.promedio) usdt = parseFloat(data.promedio);
+    } catch(e) {}
+  }
+
+  if (bcv && usdt) {
+    state.rates = { bcv, usdt, updated: now, manual: false };
+    storage.save();
+    renderRates();
+    toast('Tasas actualizadas ✓');
+  } else {
+    toast('⚠️ No se pudieron obtener las tasas. Configúralas manualmente en Ajustes.');
+  }
+}
+
+function renderRates() {
+  const { bcv, usdt } = state.rates;
+  document.getElementById('rateBCV').textContent = bcv ? bcv.toFixed(2) : '-';
+  document.getElementById('rateUSDT').textContent = usdt ? usdt.toFixed(2) : '-';
+  document.getElementById('rateSelBCV').textContent = bcv ? bcv.toFixed(2) : '-';
+  document.getElementById('rateSelUSDT').textContent = usdt ? usdt.toFixed(2) : '-';
+
+  if (bcv && usdt) {
+    const spread = ((usdt - bcv) / bcv) * 100;
+    const age = state.rates.updated ? Math.round((Date.now() - state.rates.updated) / 60000) : 0;
+    const ageText = state.rates.manual ? 'manual' : (age < 60 ? `${age}m` : `${Math.round(age/60)}h`);
+    document.getElementById('rateSpread').innerHTML =
+      `Spread: <strong>+${spread.toFixed(1)}%</strong> · Actualizado hace ${ageText}`;
+  }
+  updateConversionPreview();
+}
+
+function saveManualRates() {
+  const bcv = parseFloat(document.getElementById('manualBCV').value);
+  const usdt = parseFloat(document.getElementById('manualUSDT').value);
+  if (!bcv || !usdt) { toast('Ingresa ambas tasas'); return; }
+  state.rates = { bcv, usdt, updated: Date.now(), manual: true };
+  storage.save();
+  renderRates();
+  toast('Tasas manuales guardadas ✓');
+}
+
+// ==================== CAPTURA ====================
+function setCurrency(cur) {
+  state.currency = cur;
+  document.getElementById('curUSD').classList.toggle('active', cur === 'USD');
+  document.getElementById('curVES').classList.toggle('active', cur === 'VES');
+  document.getElementById('priceCurrencyLabel').textContent = cur === 'USD' ? '(USD)' : '(Bs)';
+  document.getElementById('rateSelectorGroup').style.display = cur === 'VES' ? 'block' : 'none';
+  updateConversionPreview();
+}
+
+function setRateType(type) {
+  state.rateType = type;
+  document.getElementById('rateBtnBCV').classList.toggle('active', type === 'BCV');
+  document.getElementById('rateBtnUSDT').classList.toggle('active', type === 'USDT');
+  updateConversionPreview();
+}
+
+function updateConversionPreview() {
+  const price = parseFloat(document.getElementById('itemPrice')?.value);
+  const qty = parseFloat(document.getElementById('itemQty')?.value) || 1;
+  const preview = document.getElementById('conversionPreview');
+  if (!preview) return;
+
+  if (!price || price <= 0) { preview.style.display = 'none'; return; }
+
+  const rate = state.rateType === 'BCV' ? state.rates.bcv : state.rates.usdt;
+  if (!rate) { preview.style.display = 'none'; return; }
+
+  let usd, ves;
+  if (state.currency === 'VES') {
+    usd = (price * qty) / rate;
+    ves = price * qty;
+  } else {
+    usd = price * qty;
+    ves = usd * rate;
+  }
+
+  preview.style.display = 'block';
+  preview.innerHTML = `Equivale a <strong style="color:var(--accent)">$${usd.toFixed(2)}</strong> / Bs ${ves.toFixed(2)} · Tasa ${state.rateType}`;
+}
+
+function addItem() {
+  const name = document.getElementById('itemName').value.trim();
+  const price = parseFloat(document.getElementById('itemPrice').value);
+  const qty = parseFloat(document.getElementById('itemQty').value) || 1;
+
+  if (!name) { toast('Ponle nombre al producto'); return; }
+  if (!price || price <= 0) { toast('Precio inválido'); return; }
+  if (!state.rates.bcv || !state.rates.usdt) { toast('No hay tasas cargadas'); return; }
+
+  const rate = state.rateType === 'BCV' ? state.rates.bcv : state.rates.usdt;
+  let priceUSD, priceVES;
+  if (state.currency === 'VES') {
+    priceUSD = price / rate;
+    priceVES = price;
+  } else {
+    priceUSD = price;
+    priceVES = price * rate;
+  }
+
+  state.cart.push({
+    id: Date.now(),
+    name,
+    qty,
+    unitPrice: price,
+    unitCurrency: state.currency,
+    unitPriceUSD: priceUSD,
+    unitPriceVES: priceVES,
+    totalUSD: priceUSD * qty,
+    totalVES: priceVES * qty,
+    rateApplied: rate,
+    rateType: state.currency === 'VES' ? state.rateType : null,
+    addedAt: Date.now(),
+  });
+
+  storage.save();
+  document.getElementById('itemName').value = '';
+  document.getElementById('itemPrice').value = '';
+  document.getElementById('itemQty').value = '1';
+  updateConversionPreview();
+  renderCart();
+  toast(`✓ ${name} agregado ($${(priceUSD * qty).toFixed(2)})`);
+}
+
+function removeItem(id) {
+  state.cart = state.cart.filter(i => i.id !== id);
+  storage.save();
+  renderCart();
+}
+
+function clearCart() {
+  if (!confirm('¿Vaciar el carrito?')) return;
+  state.cart = [];
+  storage.save();
+  renderCart();
+}
+
+// ==================== CARRITO ====================
+function renderCart() {
+  const list = document.getElementById('cartList');
+  const empty = document.getElementById('cartEmpty');
+  const totalBox = document.getElementById('totalBox');
+  const btnFinalize = document.getElementById('btnFinalize');
+  const btnClear = document.getElementById('btnClear');
+  const cartCount = document.getElementById('cartCount');
+
+  if (state.cart.length === 0) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    totalBox.style.display = 'none';
+    btnFinalize.style.display = 'none';
+    btnClear.style.display = 'none';
+    cartCount.textContent = '';
+    return;
+  }
+
+  empty.style.display = 'none';
+  list.innerHTML = state.cart.map(item => `
+    <div class="cart-item">
+      <div class="info">
+        <div class="name">${escapeHtml(item.name)}</div>
+        <div class="meta">
+          ${item.qty > 1 ? `${item.qty}× · ` : ''}
+          ${item.unitCurrency === 'VES' ? `Bs ${item.unitPrice.toFixed(2)}` : `$${item.unitPrice.toFixed(2)}`}
+          ${item.rateType ? ` · ${item.rateType}` : ''}
+        </div>
+      </div>
+      <div class="prices">
+        <div class="usd">$${item.totalUSD.toFixed(2)}</div>
+        <div class="ves">Bs ${item.totalVES.toFixed(2)}</div>
+      </div>
+      <button class="del" onclick="removeItem(${item.id})">×</button>
+    </div>
+  `).join('');
+
+  const totalUSD = state.cart.reduce((s, i) => s + i.totalUSD, 0);
+  const totalVES = state.cart.reduce((s, i) => s + i.totalVES, 0);
+
+  document.getElementById('totalUSD').textContent = `$${totalUSD.toFixed(2)}`;
+  document.getElementById('totalVES').textContent = `Bs ${totalVES.toFixed(2)} referencial`;
+  totalBox.style.display = 'block';
+  btnFinalize.style.display = 'block';
+  btnClear.style.display = 'block';
+  cartCount.textContent = `(${state.cart.length})`;
+}
+
+// ==================== PAGO ====================
+function openPaymentModal() {
+  if (state.cart.length === 0) return;
+  const totalUSD = state.cart.reduce((s, i) => s + i.totalUSD, 0);
+  const rate = state.rateType === 'BCV' ? state.rates.bcv : state.rates.usdt;
+  document.getElementById('payTotalUSD').textContent = `$${totalUSD.toFixed(2)}`;
+  document.getElementById('payTotalVES').textContent = `≈ Bs ${(totalUSD * rate).toFixed(2)} (${state.rateType})`;
+  document.getElementById('paymentModal').classList.add('show');
+}
+
+function closePaymentModal() {
+  document.getElementById('paymentModal').classList.remove('show');
+}
+
+function setPayMethod(btn) {
+  document.querySelectorAll('.pay-method').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.payMethod = btn.dataset.method;
+}
+
+function confirmPurchase() {
+  const totalUSD = state.cart.reduce((s, i) => s + i.totalUSD, 0);
+  const totalVES = state.cart.reduce((s, i) => s + i.totalVES, 0);
+
+  const purchase = {
+    id: Date.now(),
+    date: Date.now(),
+    items: [...state.cart],
+    totalUSD,
+    totalVES,
+    rateBCV: state.rates.bcv,
+    rateUSDT: state.rates.usdt,
+    payMethod: state.payMethod,
+    store: document.getElementById('payStore').value.trim(),
+  };
+
+  state.history.unshift(purchase);
+  state.cart = [];
+  storage.save();
+
+  closePaymentModal();
+  document.getElementById('payStore').value = '';
+  renderCart();
+  renderHistory();
+  toast(`✓ Compra registrada: $${totalUSD.toFixed(2)}`);
+  showView('history', document.querySelectorAll('nav button')[2]);
+}
+
+// ==================== HISTORIAL ====================
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  const empty = document.getElementById('historyEmpty');
+
+  // Stats
+  const total = state.history.reduce((s, p) => s + p.totalUSD, 0);
+  const count = state.history.length;
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  const monthTotal = state.history.filter(p => p.date >= monthStart).reduce((s, p) => s + p.totalUSD, 0);
+  const avg = count > 0 ? total / count : 0;
+
+  document.getElementById('statTotal').textContent = `$${total.toFixed(0)}`;
+  document.getElementById('statCount').textContent = count;
+  document.getElementById('statMonth').textContent = `$${monthTotal.toFixed(0)}`;
+  document.getElementById('statAvg').textContent = `$${avg.toFixed(0)}`;
+
+  drawChart();
+
+  if (count === 0) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+
+  empty.style.display = 'none';
+  const methodLabels = {
+    efectivo_usd: '💵 USD',
+    efectivo_bs: '💴 Bs',
+    pago_movil: '📱 P.Móvil',
+    debito_bs: '💳 Débito',
+    zelle: '⚡ Zelle',
+    binance: '🪙 Binance',
+  };
+
+  list.innerHTML = state.history.slice(0, 30).map(p => {
+    const date = new Date(p.date);
+    const dateStr = date.toLocaleDateString('es-VE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    return `
+      <div class="history-item">
+        <div class="top">
+          <div>
+            <div class="date">${dateStr}</div>
+            ${p.store ? `<div style="font-size:13px; font-weight:600; margin-top:2px;">${escapeHtml(p.store)}</div>` : ''}
+          </div>
+          <div class="total">$${p.totalUSD.toFixed(2)}</div>
+        </div>
+        <div>
+          <span class="tag">${methodLabels[p.payMethod] || p.payMethod}</span>
+          <span class="tag">${p.items.length} items</span>
+          <span class="tag">Bs ${p.totalVES.toFixed(0)}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function drawChart() {
+  const canvas = document.getElementById('chart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width = canvas.offsetWidth * 2;
+  const H = canvas.height = 400;
+  ctx.scale(1, 1);
+
+  const now = Date.now();
+  const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+
+  // Agrupar por día
+  const dayTotals = {};
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(now - i * 24 * 60 * 60 * 1000);
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    dayTotals[key] = 0;
+  }
+  state.history.filter(p => p.date >= thirtyDaysAgo).forEach(p => {
+    const d = new Date(p.date);
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    if (dayTotals[key] !== undefined) dayTotals[key] += p.totalUSD;
+  });
+
+  const values = Object.values(dayTotals).reverse();
+  const max = Math.max(...values, 1);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid horizontal
+  ctx.strokeStyle = '#2a3250';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = (H / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
+  }
+
+  // Barras
+  const barWidth = W / values.length;
+  values.forEach((v, i) => {
+    if (v === 0) return;
+    const h = (v / max) * (H - 20);
+    const x = i * barWidth + 2;
+    const y = H - h;
+    const grad = ctx.createLinearGradient(0, y, 0, H);
+    grad.addColorStop(0, '#4ade80');
+    grad.addColorStop(1, '#16a34a');
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, y, barWidth - 4, h);
+  });
+
+  // Label del máximo
+  ctx.fillStyle = '#8892b0';
+  ctx.font = 'bold 20px sans-serif';
+  ctx.fillText(`Max: $${max.toFixed(0)}`, 10, 24);
+}
+
+// ==================== CAMARA / OCR ====================
+function captureFromCamera() {
+  document.getElementById('cameraInput').click();
+}
+
+function handleCameraCapture(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  toast('Foto guardada. Escribe el precio manualmente.');
+  // Nota: OCR real requiere Tesseract.js (~2MB). En esta versión ligera,
+  // la foto sirve como recordatorio visual; el precio se captura manualmente.
+  // Se puede expandir agregando la librería.
+}
+
+// ==================== NAVEGACION ====================
+function showView(name, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(`view-${name}`).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  if (name === 'cart') renderCart();
+  if (name === 'history') renderHistory();
+  if (name === 'settings') {
+    document.getElementById('manualBCV').value = state.rates.bcv || '';
+    document.getElementById('manualUSDT').value = state.rates.usdt || '';
+  }
+}
+
+// ==================== EXPORTAR ====================
+function exportData() {
+  const blob = new Blob([JSON.stringify(state.history, null, 2)], { type: 'application/json' });
+  downloadBlob(blob, `pricecheck_${new Date().toISOString().split('T')[0]}.json`);
+}
+
+function exportCSV() {
+  let csv = 'fecha,total_usd,total_ves,tasa_bcv,tasa_usdt,metodo,comercio,items\n';
+  state.history.forEach(p => {
+    const items = p.items.map(i => `${i.name} x${i.qty}`).join(' | ');
+    csv += `${new Date(p.date).toISOString()},${p.totalUSD.toFixed(2)},${p.totalVES.toFixed(2)},${p.rateBCV},${p.rateUSDT},${p.payMethod},"${(p.store||'').replace(/"/g,'""')}","${items.replace(/"/g,'""')}"\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  downloadBlob(blob, `pricecheck_${new Date().toISOString().split('T')[0]}.csv`);
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast(`Descargado: ${filename}`);
+}
+
+function resetData() {
+  if (!confirm('¿Borrar TODO el historial y tasas? Esto no se puede deshacer.')) return;
+  if (!confirm('¿De verdad? Última oportunidad.')) return;
+  localStorage.removeItem('pricecheck');
+  state.history = [];
+  state.cart = [];
+  state.rates = { bcv: 0, usdt: 0, updated: null, manual: false };
+  renderCart();
+  renderHistory();
+  renderRates();
+  toast('Todo borrado');
+}
+
+// ==================== UTILS ====================
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastT);
+  window._toastT = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ==================== PWA INSTALL ====================
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  state.deferredPrompt = e;
+  document.getElementById('installBanner').classList.add('show');
+});
+
+async function installApp() {
+  if (!state.deferredPrompt) {
+    toast('Usa el menú del navegador: "Agregar a pantalla de inicio"');
+    return;
+  }
+  state.deferredPrompt.prompt();
+  const { outcome } = await state.deferredPrompt.userChoice;
+  if (outcome === 'accepted') toast('¡App instalada! 🎉');
+  state.deferredPrompt = null;
+  hideInstall();
+}
+
+function hideInstall() {
+  document.getElementById('installBanner').classList.remove('show');
+}
+
+// ==================== SERVICE WORKER ====================
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    const CACHE = 'pricecheck-v1';
+    self.addEventListener('install', e => { self.skipWaiting(); });
+    self.addEventListener('activate', e => { e.waitUntil(clients.claim()); });
+    self.addEventListener('fetch', e => {
+      if (e.request.method !== 'GET') return;
+      e.respondWith(
+        caches.match(e.request).then(r => r || fetch(e.request).then(resp => {
+          if (resp.ok && e.request.url.startsWith(self.location.origin)) {
+            const clone = resp.clone();
+            caches.open(CACHE).then(c => c.put(e.request, clone));
+          }
+          return resp;
+        }).catch(() => caches.match('/')))
+      );
+    });
+  `;
+  const blob = new Blob([swCode], { type: 'application/javascript' });
+  const url = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(url).catch(() => {});
+}
+
+// ==================== INIT ====================
+window.addEventListener('DOMContentLoaded', () => {
+  storage.load();
+  renderRates();
+  renderCart();
+  fetchRates();
+
+  document.getElementById('itemPrice').addEventListener('input', updateConversionPreview);
+  document.getElementById('itemQty').addEventListener('input', updateConversionPreview);
+});
+</script>
+</body>
+</html>
